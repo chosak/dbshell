@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+import argparse
+import os
+import sys
+
+import dj_database_url
+import django
+from django.conf import settings
+from django.core.management import call_command
+
+
+DESCRIPTION = """Runs a database command-line client given a database URL.
+
+Invokes Django's dbshell management command to connect to a database whose
+connection parameters are specified as a database URL either as a command-line
+parameter or via the DATABASE_URL environment variable.
+
+For valid database URL values, see:
+https://github.com/kennethreitz/dj-database-url
+"""
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=DESCRIPTION
+    )
+    parser.add_argument('DATABASE_URL', nargs='?')
+    args = parser.parse_args()
+
+    if args.DATABASE_URL:
+        os.environ['DATABASE_URL'] = args.DATABASE_URL
+
+    if 'DATABASE_URL' not in os.environ:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    settings.configure(
+        DATABASES={'default': dj_database_url.config()},
+        SECRET_KEY='not-so-secret'
+    )
+
+    django.setup()
+
+    call_command('dbshell')
+
+
+if __name__ == '__main__':
+    main()
